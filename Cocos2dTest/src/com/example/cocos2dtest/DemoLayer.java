@@ -23,6 +23,7 @@ import org.cocos2d.particlesystem.CCParticleSnow;
 import org.cocos2d.particlesystem.CCParticleSystem;
 import org.cocos2d.sound.SoundEngine;
 import org.cocos2d.types.CGPoint;
+import org.cocos2d.types.CGRect;
 import org.cocos2d.types.CGSize;
 import org.cocos2d.types.util.CGPointUtil;
 
@@ -31,6 +32,10 @@ import android.media.MediaPlayer;
 import android.media.SoundPool;
 import android.view.MotionEvent;
 
+/**
+ * 主要的layer
+ * 
+ */
 public class DemoLayer extends CCLayer {
 
 	private CCTMXTiledMap gameMap;
@@ -75,6 +80,7 @@ public class DemoLayer extends CCLayer {
 		// 大地图的移动，英雄在屏幕中间，会出现黑边
 		// this.runAction(CCFollow.action(sprite));
 		// 小地图
+		// 游戏暂停的操作
 	}
 
 	@Override
@@ -82,6 +88,17 @@ public class DemoLayer extends CCLayer {
 		gameMap.touchMove(event, gameMap);
 
 		return super.ccTouchesMoved(event);
+	}
+
+	@Override
+	public boolean ccTouchesBegan(MotionEvent event) {
+		// 显示暂停的layer
+		onExit();
+		// 添加暂停的layer，必须添加到场景（CCSense）中
+		PauseLayer layer = new PauseLayer();
+		getParent().addChild(layer);
+
+		return super.ccTouchesBegan(event);
 	}
 
 	/**
@@ -193,4 +210,39 @@ public class DemoLayer extends CCLayer {
 		this.addChild(gameMap);
 	}
 
+	public class PauseLayer extends CCLayer {
+		private CCSprite sprite;
+
+		public PauseLayer() {
+
+			this.setIsTouchEnabled(true);
+			sprite = getSprite();
+			CGSize winSize = CCDirector.sharedDirector().getWinSize();
+			sprite.setPosition(winSize.width / 2, winSize.height / 2);
+		}
+
+		@Override
+		public boolean ccTouchesBegan(MotionEvent event) {
+			// 继续游戏
+			CGPoint touchPos = this.convertTouchToNodeSpace(event);
+			if (CGRect.containsPoint(sprite.getBoundingBox(), touchPos)) {
+				// 游戏继续
+				// 销毁当前layer
+				removeSelf();
+//				this.setVisible(false);
+				// new DemoLayer().onEnter();//发送一个广播？还是怎么的
+				System.out.println("===========");
+
+				DemoLayer.this.onEnter();// 游戏继续
+			}
+			return super.ccTouchesBegan(event);
+		}
+
+		private CCSprite getSprite() {
+			CCSprite sprite = CCSprite.sprite("z_1_attack_01.png");
+			sprite.setAnchorPoint(0, 0);// 设置锚点
+			this.addChild(sprite);
+			return sprite;
+		}
+	}
 }
